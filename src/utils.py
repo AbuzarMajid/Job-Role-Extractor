@@ -16,11 +16,11 @@ def create_run(client: OpenAI, thread_id, assistant_id):
             raise CustomExcetions(e, sys)
         
 
-def assistant_definition(client: OpenAI, model_name):
+def assistant_definition(client: OpenAI, model_name, instructions):
     try:
         # defining assisatnt for the category in which the job description is given
         assistant = client.beta.assistants.create(
-            instructions=JobRoleExtractor().job_role_extractor_instructions,
+            instructions=instructions,
             name="Job Role Extractor",
             model=model_name
         )
@@ -55,6 +55,7 @@ def create_messages(client:OpenAI, thread_id, content):
         )
         logging.info("successfully defined message")
         return message
+
     except Exception as e:
         raise e
     
