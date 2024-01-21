@@ -13,7 +13,7 @@ class JobRoleFunctionExtractorPipeline():
         self.content = content
         self.instructions = instructions
 
-    async def extraction(self):
+    def extraction(self):
         try:
             thread_id, assistant_id = assistant_definition(client=self.client, model_name=self.model_name, instructions=self.instructions)
             create_messages(client=self.client, thread_id=thread_id, content=self.content)

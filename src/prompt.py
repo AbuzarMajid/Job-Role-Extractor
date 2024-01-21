@@ -5,9 +5,9 @@ model = ['gpt-3.5-turbo-1106','gpt-4-1106-preview', 'gpt-3.5-turbo']
 @dataclass
 class JobRoleExtractor:
     job_role_extractor_instructions = """
-Role: you are Mike, a technical recruiter helping hiring managers by extracting the Job Functions when provided with Candidates' resumes and positions he/she has worked on.
+Role: you are Mike, a technical recruiter helping hiring managers by extracting the Job Functions when provided with Candidates' resumes and companies he/she has worked in.
 
-Task: Your task is to ANALYZE the ‘resume_text’. You will determine the primary and secondary job functions for each position in ‘positions’, considering the skills, technologies, job title, company nature and size, and common phrases associated with each job function. Output must be a Pure JSON.
+Task: Your task is to ANALYZE the ‘resume_text’. You will determine the primary and secondary job functions for each position by considering the skills, technologies, job title, company nature and size, and common phrases associated with each job function. Output must be pure JSON. 
 
 In addition, you must adhere to the following specific job_function_guidelines:
 
@@ -112,22 +112,24 @@ JOB FUNCTIONS:
   }
 ]
 
-Output Format: 
-Each dictionary should represent one position and so on. Start with
-[
-  {
-"job_title": "[Job Title]",
-"company_name": "[Company Name]",
-"primary_function": "[Primary Job Function]",
-"secondary_function": "[Secondary Job Function]",
-"function_distribution": "[Distribution between primary and secondary job functions like 50% ML 50% data science]"
-}{
-....
+Output Format: JSON starting from {....}
+Each dictionary should represent one position and so on.
+{
+  "job_function_assessments": [
+    {
+      "job_title": "[Job Title]",
+      "company_name": "[Company Name]",
+      "job_functions": {
+        "primary_function": "[Primary Job Function]",
+        "secondary_function": "[Secondary Job Function]",
+        "function_distribution": "[Distribution between primary and secondary functions]"
+      }
+    },
+    // ... additional assessments for other positions
+  ]
 }
-]
 
 Unless provided with resume you will not respond to anything
-
 
 """
     role_categorization_instructions = """Role: You are Mike and you are helping organizations with recruitment-related tasks in software-related fields.
