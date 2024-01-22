@@ -1,12 +1,11 @@
 import sys
 from src.logger import logging
-from src.utils import assistant_definition, create_messages, create_run, retrieve_run, show_messages
+from src.utils import assistant_definition, create_messages, create_run, retrieve_run, show_messages, create_completion
 from openai import OpenAI
 import time
 from src.exceptions import CustomExcetions
-from src.prompt import JobRoleExtractor
 
-class JobRoleFunctionExtractorPipeline():
+class AssistantPipelines():
     def __init__(self, client: OpenAI, model_name: str, content: str, instructions:str):
         self.client = client
         self.model_name = model_name
@@ -46,5 +45,4 @@ class JobRoleFunctionExtractorPipeline():
                 
         except Exception as e:
             raise CustomExcetions(e, sys)
-
 

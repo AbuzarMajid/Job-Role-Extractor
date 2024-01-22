@@ -2,9 +2,9 @@ from openai import OpenAI
 from src.logger import logging
 from src.exceptions import CustomExcetions
 import sys
+import json
 from src.prompt import JobRoleExtractor
 
-    
 def create_run(client: OpenAI, thread_id, assistant_id):
         try:
             run = client.beta.threads.runs.create(
@@ -68,3 +68,40 @@ def show_messages(client: OpenAI, thread_id):
         return response
     except Exception as e:
         raise CustomExcetions(e, sys)
+    
+
+def create_completion(client: OpenAI, model_name, messages):
+    try:
+        logging.info('Entered Compeltion')
+        completion = client.chat.completions.create(
+            model=model_name,
+            messages=[messages],
+            temperature=0.0,
+            max_tokens=3000
+        )
+        logging.info('Done with completion')
+        response = completion.choices[0].message
+        return response.content
+    except Exception as e:
+        raise CustomExcetions(e, sys)
+
+def domain_categ(client:OpenAI, content):
+    response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {
+        "role": "system",
+        "content": JobRoleExtractor().domain_categorization
+        },
+        {
+        "role": "user",
+        "content": content      
+        }
+    ],
+    temperature=0,
+    max_tokens=1000,
+    top_p=1,
+    frequency_penalty=0,
+    presence_penalty=0
+    )
+    return json.loads(response.choices[0].message.content)
