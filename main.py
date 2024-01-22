@@ -28,10 +28,7 @@ async def job_role_function(categorizer: categorization):
     try:
         resume_text = categorizer.resume_text
         companies_description = categorizer.companies_description
-
         content = resume_text + '\n\n' + companies_description
-        print(content)
-
         instructions_job_role = JobRoleExtractor().job_role_extractor_instructions
         instruction_job_role_categ = JobRoleExtractor().role_categorization_instructions
         with ThreadPoolExecutor() as executor:

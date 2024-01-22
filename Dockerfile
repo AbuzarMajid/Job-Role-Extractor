@@ -1,4 +1,4 @@
-FROM python:3.12
+FROM python:3.11.5
 
 WORKDIR /app
 
@@ -8,4 +8,4 @@ RUN pip install -r requirements.txt
 
 EXPOSE 8080
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]  # Run ap
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
