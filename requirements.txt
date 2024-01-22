@@ -1,5 +1,3 @@
-pandas
-numpy
 openai
 python-dotenv
 fastapi[all]
