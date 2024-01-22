@@ -1,6 +1,6 @@
 import sys
 from src.logger import logging
-from src.utils import assistant_definition, create_messages, create_run, retrieve_run, show_messages, create_completion
+from src.utils import assistant_definition, create_messages, create_run, retrieve_run, show_messages, create_completion, transform
 from openai import OpenAI
 import time
 from src.exceptions import CustomExcetions
@@ -35,7 +35,8 @@ class AssistantPipelines():
                     show_message = show_messages(client=self.client, thread_id=thread_id)
                     logging.info('Successfully shown message')
                     status = False
-                    return show_message
+
+                    return transform(show_message)
 
                 elif retrieved_run.status in ['cancelling', 'cancelled', 'failed', 'expired']:
                     user_message = f'Run Status: {retrieved_run.status}'

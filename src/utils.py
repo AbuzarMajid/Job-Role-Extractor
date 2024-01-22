@@ -4,6 +4,7 @@ from src.exceptions import CustomExcetions
 import sys
 import json
 from src.prompt import JobRoleExtractor
+import re
 
 def create_run(client: OpenAI, thread_id, assistant_id):
         try:
@@ -105,3 +106,15 @@ def domain_categ(client:OpenAI, content):
     presence_penalty=0
     )
     return json.loads(response.choices[0].message.content)
+
+
+def transform(json_string: str):
+    json_string = json_string
+    # Use regular expression to extract content including the initial "```json\n" and ending "\n```"
+    match = re.search(r'```json\n(.*)\n```', json_string, re.DOTALL)
+
+    if match:
+        extracted_content = match.group(1)
+        return extracted_content
+    else:
+        return json.loads(json_string)
