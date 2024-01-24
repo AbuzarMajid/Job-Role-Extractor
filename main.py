@@ -1,5 +1,5 @@
-from src.pipeline.pipeline import AssistantPipelines
-from src.utils import domain_categ
+from src.pipeline.assistant_pipeline import AssistantPipelines
+from src.utils import chat_completion
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -29,17 +29,16 @@ async def job_role_function(categorizer: categorization):
         resume_text = categorizer.resume_text
         companies_description = categorizer.companies_description
         content = resume_text + '\n\n' + companies_description
-        instructions_job_role = JobRoleExtractor().job_role_extractor_instructions
-        instruction_job_role_categ = JobRoleExtractor().role_categorization_instructions
         with ThreadPoolExecutor() as executor:
-            job_role_future = executor.submit(AssistantPipelines(client=client, model_name=model_name, content=resume_text, instructions=instructions_job_role).extraction)
-            job_role_categ_future = executor.submit(AssistantPipelines(client=client, model_name=model_name, content=resume_text, instructions=instruction_job_role_categ).extraction)
-            domain_categ_future = executor.submit(domain_categ, client = client, content = content)
-        
+            job_role_future = executor.submit(chat_completion, client = client, content = resume_text, model = model[0], prompt = JobRoleExtractor().job_role_extractor_instructions)
+            job_role_categ_future = executor.submit(chat_completion, client=client, content=resume_text, model = model[0], prompt = JobRoleExtractor().role_categorization_instructions)
+            domain_categ_future = executor.submit(chat_completion, client = client, content = content, model = model[1], prompt = JobRoleExtractor().domain_categorization)
+            industry_eperience_future = executor.submit(chat_completion, client = client, content = content, model = model[0], prompt =  JobRoleExtractor().industry_experience)
         return {
                 "job_role_function": job_role_future.result(),
                 "role_categorization": job_role_categ_future.result(),
-                "domain_categorization": domain_categ_future.result()
+                "domain_categorization": domain_categ_future.result(),
+                "industry_experience": industry_eperience_future.result()
                 }
     
     except Exception as e:

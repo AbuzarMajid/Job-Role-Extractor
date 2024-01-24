@@ -1,6 +1,6 @@
 import sys
 from src.logger import logging
-from src.utils import assistant_definition, create_messages, create_run, retrieve_run, show_messages, create_completion, transform
+from src.utils import assistant_definition, create_messages, create_run, retrieve_run, show_messages, transform
 from openai import OpenAI
 import time
 from src.exceptions import CustomExcetions
