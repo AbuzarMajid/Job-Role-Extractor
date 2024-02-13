@@ -74,11 +74,10 @@ def chat_completion(client:OpenAI, content, model, prompt):
         response = client.chat.completions.create(
         model=model,
         response_format={"type": "json_object"},
-        seed=42,
         messages=[
             {
             "role": "system",
-            "content": prompt
+            "content": content
             },
             {
             "role": "user",
@@ -91,7 +90,7 @@ def chat_completion(client:OpenAI, content, model, prompt):
         frequency_penalty=0,
         presence_penalty=0
         )
-        return json.loads(response.choices[0].message.content)
+        return  json.loads(response.choices[0].message.content)
     except Exception as e:
         raise CustomExcetions(e, sys)
 
