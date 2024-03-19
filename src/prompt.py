@@ -112,7 +112,7 @@ JOB FUNCTIONS:
   }
 ]
 
-Output Format: JSON
+Output Format: json
 Each dictionary should represent one position and so on.
 {
   "job_function_assessments": [
@@ -177,7 +177,7 @@ Output Format:
 
 Each job position section of the resume should be tagged as one of the following: IC, Team Lead, Manager.
 
-Output Format: JSON
+Output Format: json
 {
   "role_categorization": [
     {

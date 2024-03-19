@@ -77,7 +77,7 @@ def chat_completion(client:OpenAI, content, model, prompt):
         messages=[
             {
             "role": "system",
-            "content": content
+            "content": prompt
             },
             {
             "role": "user",

@@ -1,4 +1,3 @@
-from src.pipeline.assistant_pipeline import AssistantPipelines
 from src.utils import chat_completion
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import FastAPI
@@ -20,6 +19,7 @@ model_name = model[0]
 class categorization(BaseModel):
     resume_text: str
     companies_description: str = ''
+
 
 app = FastAPI()
 
