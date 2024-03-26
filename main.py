@@ -1,11 +1,12 @@
-from src.utils import chat_completion
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import FastAPI
 from pydantic import BaseModel
 from src.exceptions import CustomExcetions
 from openai import OpenAI
-from src.prompt import JobRoleExtractor, model
+from src.prompt import model
+from src.utils import response_formatter
 import os
+from src.pipeline.response_formatting import RawResponse
 import sys
 from dotenv import load_dotenv
 
@@ -14,32 +15,51 @@ load_dotenv()
 
 api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key)
-model_name = model[0]
+
+from concurrent.futures import ThreadPoolExecutor
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
 
 class categorization(BaseModel):
     resume_text: str
     companies_description: str = ''
-
+    domain_categorization: bool = True
+    job_function_extraction: bool = True
+    industry_experience_extraction: bool = True
 
 app = FastAPI()
 
 @app.post("/job_role")
 async def job_role_function(categorizer: categorization):
     try:
+        final_results = {}
         resume_text = categorizer.resume_text
         companies_description = categorizer.companies_description
-        content = resume_text + '\n\n' + companies_description
+        response_obj = RawResponse(client=client, model=model[2], resume=resume_text)
+
         with ThreadPoolExecutor() as executor:
-            job_role_future = executor.submit(chat_completion, client = client, content = resume_text, model = model[0], prompt = JobRoleExtractor().job_role_extractor_instructions)
-            job_role_categ_future = executor.submit(chat_completion, client=client, content=resume_text, model = model[0], prompt = JobRoleExtractor().role_categorization_instructions)
-            domain_categ_future = executor.submit(chat_completion, client = client, content = content, model = model[1], prompt = JobRoleExtractor().domain_categorization)
-            industry_eperience_future = executor.submit(chat_completion, client = client, content = content, model = model[0], prompt =  JobRoleExtractor().industry_experience)
-        return {
-                "job_role_function": job_role_future.result(),
-                "role_categorization": job_role_categ_future.result(),
-                "domain_categorization": domain_categ_future.result(),
-                "industry_experience": industry_eperience_future.result()
-                }
+            futures = []
+            if categorizer.job_function_extraction:
+                futures.append(executor.submit(response_obj.job_function))
+            if categorizer.domain_categorization:
+                futures.append(executor.submit(response_obj.domain_categorization, company_description=companies_description))
+            if categorizer.industry_experience_extraction:
+                futures.append(executor.submit(response_obj.industry_experience, company_description=companies_description))
+
+            for future in futures:
+                result = future.result()
+                if result:
+                    final_results.update(result)
+
+
+        final_dict = {"resume_information": final_results} 
+
+        resume_information =  {"resume_information": response_formatter(final_dict, job_functions = categorizer.job_function_extraction, 
+                                                                        domain_categorization=categorizer.domain_categorization, 
+                                                                        industry_experience= categorizer.industry_experience_extraction)}
+        return resume_information
     
     except Exception as e:
         raise CustomExcetions(e, sys)

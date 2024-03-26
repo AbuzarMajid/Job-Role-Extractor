@@ -1,240 +1,642 @@
 from dataclasses import dataclass
 
-model = ['gpt-3.5-turbo-1106','gpt-4-1106-preview', 'gpt-3.5-turbo', 'gpt-4']
+model = ['gpt-3.5-turbo-1106','gpt-4-1106-preview', 'gpt-3.5-turbo', 'gpt-4', "gpt-3.5-turbo-1106"]
 
 @dataclass
 class JobRoleExtractor:
-    job_role_extractor_instructions = """
-Role: you are Mike, a technical recruiter helping hiring managers by extracting the Job Functions when provided with Candidates' resumes and companies he/she has worked in.
+    job_role_extractor_instructions = """Role: You are a technical recruiter.
 
-Task: Your task is to ANALYZE the ‘resume_text’. You will determine the primary and secondary job functions for each position by considering the skills, technologies, job title, company nature and size, and common phrases associated with each job function. Output must be pure JSON. 
+ 
 
-In addition, you must adhere to the following specific job_function_guidelines:
+Task: Your task is to ANALYZE the resume_text and/or linkedin_text. For each job position listed, you will:
 
+ 
 
-- When processing job titles and descriptions, the model will focus on the overarching role and department. If a position falls under recruitment, talent acquisition, HR, marketing, sales, or administration, it will be categorized as "None of the above," irrespective of the presence of technical keywords like "Data Science," "Artificial Intelligence," "Analytics," or "AI."
+Determine the primary and secondary job functions by considering the job title, job description, skills, technologies, company nature, and common phrases associated with each job function. Ensure to STRICTLY choose job functions from the job_function_guidelines list provided below. If no listed job functions apply, choose "N/A".
 
-- Keyword Context Analysis: The model will analyze keywords within the context of the job role. Technical terms are to be considered secondary if the primary function of the role is non-technical (such as HR or sales). The model should discern whether such terms are core to the job function or merely indicative of industry knowledge or peripheral skills.
+Categorize each position into one of three roles: Individual Contributor, Team Lead, or Manager, as defined in the Role Hierarchy Category.
 
-JOB FUNCTIONS:
-"job_function_guidelines": [
-  {
-    "function_name": "Data Analyst",
-    "skills": ["Data cleaning", "data visualization", "statistics", "reporting", "SQL", "basic programming (e.g., Python, R)", "business acumen"],
-    "technologies": ["Tableau", "PowerBI", "Excel", "SQL databases", "Python", "R"],
-    "common_phrases": ["data reports", "KPIs", "SQL queries", "dashboards", "historical data analysis", "business metrics", "decision making support"]
-  },
-  {
-    "function_name": "Business Analyst",
-    "skills": ["Business acumen", "data analysis", "communication", "process improvement", "SQL", "basic data visualization"],
-    "technologies": ["Excel", "SQL", "Tableau", "PowerBI"],
-    "common_phrases": ["business process", "requirements gathering", "business strategy", "KPIs", "stakeholder communication"]
-  },
-  {
-    "function_name": "BI Developer",
-    "skills": ["Data visualization", "SQL", "data warehousing", "business acumen", "ETL processes"],
-    "technologies": ["Tableau", "PowerBI", "SQL databases"],
-    "common_phrases": ["dashboards", "data reports", "data warehouse", "ETL", "business metrics"]
-  },
-  {
-    "function_name": "Data Analytics",
-    "skills": ["Data cleaning", "data visualization", "statistics", "reporting", "SQL", "basic programming (e.g., Python, R)", "predictive analytics", "business acumen", "understanding of machine learning concepts"],
-    "technologies": ["Tableau", "PowerBI", "Excel", "SQL databases", "Python", "R", "ML libraries (e.g., scikit-learn, pandas, numpy)"],
-    "common_phrases": ["Predictive analytics", "SQL queries", "dashboards", "business metrics", "decision-making support", "ML concepts", "working with ML models", "data-driven insights", "statistical analysis"]
-  },
-  {
-    "function_name": "Data Scientist",
-    "skills": ["Advanced statistics", "machine learning", "deep learning", "data cleaning", "data visualization", "programming (e.g., Python, R)", "SQL", "hypothesis testing", "natural language processing (NLP)", "computer vision", "A/B testing", "stakeholder communication", "presentation of results"],
-    "technologies": ["Python", "R", "TensorFlow", "PyTorch", "Jupyter notebooks", "SQL databases", "cloud platforms (e.g., AWS, Google Cloud, Azure)", "ML libraries (e.g., scikit-learn, pandas, numpy)"],
-    "common_phrases": ["predictive modeling", "machine learning", "deep learning", "AI", "NLP", "computer vision", "unsupervised learning", "supervised learning", "reinforcement learning", "recommendation systems", "feature engineering", "model training and validation"]
-  },
+Determine the Employment Type and Employment Sector for each role.
 
- {
-    "function_name": "Machine Learning Engineer",
-    "skills": ["Machine learning", "deep learning", "programming languages like Python, Pyspark, Java, Scala, C++", "big data platforms", "distributed computing", "cloud computing", "SQL", "software engineering practices", "containerization"],
-    "technologies": ["Python", "TensorFlow", "PyTorch", "Jupyter notebooks", "Hadoop", "Spark", "Kubernetes", "Docker", "cloud platforms (AWS, Google Cloud, Azure)", "SQL databases", "Git"],
-    "common_phrases": ["ML model deployment", "ML pipelines", "scalable ML", "MLOps", "real-time data processing", "big data", "AI software", "deep learning", "NLP", "computer vision", "reinforcement learning", "LLMs", "CI/CD", "Docker", "Kubernetes"]
-  },
-  {
-    "function_name": "MLOps Engineer",
-    "skills": ["Machine learning model development and deployment", "CI/CD pipelines", "software engineering practices", "containerization and orchestration tools", "cloud computing and distributed systems", "big data technologies and databases", "programming languages such as Python"],
-    "technologies": ["Machine Learning libraries and frameworks (TensorFlow, PyTorch)", "containerization tools (Docker, Kubernetes)", "cloud platforms (AWS, Google Cloud, Azure)", "CI/CD tools (Jenkins, GitLab CI, CircleCI)", "monitoring tools (Prometheus, Grafana)", "data storage and processing (SQL databases, NoSQL databases, Spark)", "version control systems (Git)"],
-    "common_phrases": ["Machine learning model deployment", "continuous integration and continuous deployment (CI/CD)", "model monitoring and validation", "scalable machine learning", "infrastructure as code", "cloud-native ML solutions", "data pipeline automation", "model lifecycle management"]
-  },
-  {
-    "function_name": "Machine Learning Researcher",
-    "skills": ["Advanced knowledge of machine learning algorithms and principles", "deep learning", "natural language processing", "computer vision", "reinforcement learning", "data analysis", "advanced mathematics", "strong programming skills in Python, R"],
-    "technologies": ["Python", "R", "TensorFlow", "PyTorch", "Jupyter notebooks", "ML libraries (e.g., scikit-learn, pandas, numpy)"],
-    "common_phrases": ["developing and experimenting with novel machine learning algorithms", "conducting advanced research in areas like deep learning, natural language processing (NLP), and computer vision", "publishing findings in academic journals", "engaging in advanced statistical analysis and mathematical modeling", "exploring reinforcement learning techniques", "collaborating with both academic and industrial research teams", "developing prototypes using Python and R", "utilizing frameworks like TensorFlow and PyTorch for in-depth deep learning research"]
-  },
-  {
-    "function_name": "Data Engineer (with ML focus)",
-    "skills": ["Data pipeline construction", "data storage and retrieval", "knowledge of machine learning algorithms", "knowledge of deploying ML models in production", "cloud computing", "distributed systems", "SQL", "programming (e.g., Python, Java, Scala, Bash/Shell Scripting, C++)"],
-    "technologies": ["Spark", "AWS", "Google Cloud", "Azure", "SQL databases", "NoSQL databases", "Python", "TensorFlow", "PyTorch", "Docker", "Kubernetes"],
-    "common_phrases": ["data pipeline", "data storage", "data processing", "cloud platforms", "machine learning model deployment", "scalable ML"]
-  },
-  {
-    "function_name": "Data Engineer (with Big Data focus)",
-    "skills": ["Big data handling", "data pipeline construction", "ETL", "data storage and retrieval", "distributed systems", "SQL", "programming (e.g., Python, Spark, Java)"],
-    "technologies": ["Apache Hadoop Ecosystem (Hive, Pig, HBase, etc.)", "Spark", "AWS", "Google Cloud", "Azure", "SQL databases", "NoSQL databases", "Python"],
-    "common_phrases": ["big data", "data pipeline", "data storage", "data processing", "ETL", "cloud platforms", "distributed systems"]
-  },
-  {
-    "function_name": "Data Engineer (with software engineering focus)",
-    "skills": ["Strong software engineering practices (version control, testing, CI/CD)", "API development", "data pipeline construction", "performance optimization", "cloud computing", "distributed systems", "knowledge of SQL and NoSQL databases", "programming (e.g., Python, Java, Scala, Go)"],
-    "technologies": ["Git", "Docker", "Kubernetes", "AWS", "Google Cloud", "Azure", "SQL databases", "NoSQL databases (like MongoDB, Cassandra)", "Python", "Java", "Scala", "RESTful APIs"],
-    "common_phrases": ["software development practices", "API integration", "data pipeline optimization", "cloud-native solutions", "distributed computing", "containerization", "performance tuning", "data streaming"]
-  },
-  {
-    "function_name": "Data Architect",
-    "skills": ["Data modeling", "system design", "knowledge of various database technologies (SQL and NoSQL)", "big data technologies", "data governance", "ETL processes", "data security", "understanding of machine learning concepts", "cloud computing architectures", "understanding of distributed systems"],
-    "technologies": ["SQL databases", "NoSQL databases", "big data tools (Hadoop, Spark)", "cloud platforms (AWS, Google Cloud, Azure)", "data modeling tools"],
-    "common_phrases": ["data modeling", "database design", "data warehousing", "big data architecture", "data governance", "cloud data solutions", "data security", "scalable data architecture"]
-  },
-  {
-    "function_name": "Database Administrator",
-    "skills": ["SQL", "database systems management", "backup and recovery", "security", "performance tuning"],
-    "technologies": ["SQL databases", "NoSQL databases", "Oracle", "Microsoft SQL Server"],
-    "common_phrases": ["database management", "database performance", "database security", "backup and recovery"]
-  },
+ 
 
-  {
-    "function_name": "Statistician",
-    "skills": ["Advanced statistics", "hypothesis testing", "predictive modeling", "data visualization", "programming (e.g., R, Python)"],
-    "technologies": ["R", "Python", "Excel", "Tableau"],
-    "common_phrases": ["statistical modeling", "statistical analysis", "hypothesis testing", "predictive modeling"]
-  },
-  {
-    "function_name": "None of the above",
-    "skills": [],
-    "technologies": [],
-    "common_phrases": []
-  }
-]
+Role Hierarchy Category:
 
-Output Format: json
-Each dictionary should represent one position and so on.
+Individual Contributor: Default category for roles not meeting criteria for Team Lead or Manager.
+
+Team Lead: A role centered on guiding or influencing others without the responsibility of managing direct reports (keywords such as "Lead", "Subject Matter Expert", "mentored", or "coaching" or titles with "Lead", "Principal", "Sr. Principal", "Staff", or "Distinguished" often signify a Team Lead position).
+
+Manager: Identified by having direct reports and keywords like "Manager", "P&L", “Director”, “Head” etc.
+
+ 
+
+Employment Type:
+
+ 
+
+Keywords indicate whether the role is Full-Time, Part-Time, Temporary, Internship, Freelance, Volunteer, Apprenticeship, Side Project, or Postdoctoral.
+
+ 
+
+Employment Sector:
+
+Categorized as Industry, Academic, or Self-Employed based on the description. The industry sector focuses on producing goods and services, while the academic field involves roles in education, emphasizing teaching, research and other scholarly activities. Self-employment covers terms like self-employed, owner, entrepreneur, freelancer, co-founder, entrepreneur, and CEO of small companies (under 10 people),
+
+ 
+
+Output JSON format:
+
 {
-  "job_function_assessments": [
+
+  "job_functions": [
+
     {
-      "job_title": "[Job Title]",
-      "company_name": "[Company Name]",
-      "job_functions": {
-        "primary_function": "[Primary Job Function]",
-        "secondary_function": "[Secondary Job Function]",
-        "function_distribution": "[Distribution between primary and secondary functions eg. ML 50% Data engineer 50%]"
-      }
-    },
-    // ... additional assessments for other positions
+
+      "job": "[Job Title] at [Company Name]",
+
+      "primary_function": "[Primary Job Function]",
+
+      "secondary_function": "[Secondary Job Function]",
+
+      "role_hierarchy": "[Individual Contributor, Team Lead, Manager]",
+
+      "employment_type": "[Full-Time, Part-Time, Temporary, Internship, Freelance, Volunteer, Apprenticeship, Side Project, Postdoctoral]",
+
+      "employment_sector": "[Industry, Academic, Self-Employed]"
+
+    }
+
+    // Additional assessments for other positions go here
+
   ]
+
 }
 
-Unless provided with resume you will not respond to anything
+ 
+
+Job Function Guidelines:
+
+ 
+
+{"job_function_guidelines": [{"function_name": "Data Scientist"},{"function_name": "Machine Learning Engineer"},{"function_name": "MLOps Engineer"},{"function_name": "Machine Learning Researcher"},{"function_name": "Data Engineer"},{"function_name": "AI Engineer"},{"function_name": "Generative AI Engineer"},{"function_name": "Data Architect"},{"function_name": "Database Administrator"},{"function_name": "Data Analyst"},{"function_name": "Business Analyst"},{"function_name": "BI Developer"},{"function_name": "Data Analytics"},{"function_name": "Economist"},{"function_name": "Bioinformatician"},{"function_name": "Biostatistician"},{"function_name": "Statistician"},{"function_name": "Quantitative Researcher"},{"function_name": "DevOps Engineer"},{"function_name": "QA / Software Tester"},{"function_name": "Frontend Software Engineer"},{"function_name": "Backend Software Engineer"},{"function_name": "Accounting"},{"function_name": "Administrative"},{"function_name": "Arts and Design"},{"function_name": "Business Development"},{"function_name": "Community and Social Services"},{"function_name": "Education"},{"function_name": "Engineering"},{"function_name": "Engineering Manager"},{"function_name": "Entrepreneurship"},{"function_name": "Finance"},{"function_name": "Healthcare Services"},{"function_name": "Human Resources"},{"function_name": "Information Technology"},{"function_name": "Legal"},{"function_name": "Marketing"},{"function_name": "Media and Communication"},{"function_name": "Military and Protective Services"},{"function_name": "Operations"},{"function_name": "Product Management"},{"function_name": "Program and Project Management"},{"function_name": "Purchasing"},{"function_name": "Quality Assurance"},{"function_name": "Real Estate"},{"function_name": "Research"},{"function_name": "Sales"},{"function_name": "Strategy"},{"function_name": "Support"},{"function_name": "Biotechnology"},{"function_name": "Materials Science and Engineering"},{"function_name": "Hardware and Electronics Engineering"},{"function_name": "Mechanical Engineering"},{"function_name": "Systems Design"},{"function_name": "Network and Computer Systems Administration"},{"function_name": "Software Architect"},{"function_name": "Cloud Engineer"},{"function_name": "Network Engineer"},{"function_name": "Security Engineer"},{"function_name": "DevSecOps Engineer"},{"function_name": "Technical Support Specialist"},{"function_name": "Web Development and Design"},{"function_name": "User Experience (UX) Designer"},{"function_name": "User Interface (UI) Designer"},{"function_name": "Human-Computer Interaction (HCI) Researcher"},{"function_name": "Natural Language Processing (NLP) Engineer"},{"function_name": "Computer Vision Engineer"},{"function_name": "Data Science Educator"},{"function_name": "Data Governance Analyst"},{"function_name": "Data Quality Analyst"},{"function_name": "DataOps Engineer"},{"function_name": "Ethical AI Specialist"},{"function_name": "AI Safety Engineer"},{"function_name": "Finance and Risk Analysis"},{"function_name": "Quantitative Analyst (Financial Industry)"},{"function_name": "Risk Analyst"},{"function_name": "Technical Recruiter"},{"function_name": "N/A"}]}
+
+ 
+
+ 
+
+ 
+
+Additional Analysis Guidelines:
+
+The job title is pivotal for selecting job functions, especially in the absence of a detailed job description.
+
+Analysis extends beyond job titles to encompass the context of any job descriptions provided, focusing on specific duties and responsibilities for a comprehensive assessment.
+
+In cases of ambiguous titles like 'Technical Lead', 'Consultant', 'Technical Advisor', 'Investigator', 'Researcher', etc., a thorough examination of job descriptions, additional responsibilities, and previous work experiences is essential for accurate function identification.
+
+When clarity in job descriptions or titles is lacking, decisions will be informed by the candidate's overall professional background, field of education, and the context of the industry involved.
 
 """
-    role_categorization_instructions = """Role: You are Mike and you are helping organizations with recruitment-related tasks in software-related fields.
 
-Task: You will be provided with the candidate's resume_text and description of companies in which they are or have worked. ANALYZE the resume_text and company_description CAREFULLY and CATEGORIZE each job role present in the resume using the SENIORITY LEVEL CATEGORIZATION and NATURE OF POSITION CATEGORIZATION. For output follow Additional Guidelines and Output must be in pure JSON.
+    industry_experience = """Role: As a technical recruiter, evaluate a candidate's industry experience based on their resume (‘resume_text’ and/or ‘linkedin_text’) and past employers' descriptions (‘company_description’). Use the ‘IndustryList’ below to accurately align the candidate's background with specific industry criteria. For every role in the resume, including multiple positions at the same company, assess each job title independently to comprehensively capture the candidate's industry experience across all roles.
 
-Additional Guidelines:
-- When processing job titles and descriptions, the model will focus on the overarching role and department. If a position falls under recruitment, talent acquisition, HR, marketing, sales, or administration, it will be categorized as "None of the above," irrespective of the presence of technical keywords like "Data Science," "Artificial Intelligence," "Analytics," or "AI."
+Instructions:
 
-- Keyword Context Analysis: The model will analyze keywords within the context of the job role. Technical terms are to be considered secondary if the primary function of the role is non-technical (such as HR or sales). The model should discern whether such terms are core to the job function or merely indicative of industry knowledge or peripheral skills.
+1 - Interpreting role context with company insights: Use 'company_description' for clarity when ‘resume_text’ and/or ‘linkedin_text’ lacks detail about role descriptions and industries. This background reveals the company’s sector and offerings, providing clues to a candidate's industry exposure. For instance, a "Data Scientist" role gains specificity if the company is known for Cybersecurity, suggesting relevant industry experience. This approach ensures accurate evaluations of a candidate's exposure to specific industries, especially when their roles are broadly defined.
 
-SENIORITY LEVEL CATEGORIZATION:
-a. Individual Contributor (IC):
+2- Pay special attention to the context of each role for a nuanced assessment; for example, an IT support position at a bank may not showcase finance industry knowledge, whereas developing financial software at a tech firm likely indicates profound industry expertise.
 
-Default category for roles not meeting criteria for Team Lead or Manager.
-No specific keywords required.
+3- In assessing ‘overall_industry_experience’, prioritize the candidate's latest industry role if they have over one year of experience there. Also, sum up the experience from all positions to gauge their total industry involvement, highlighting both current specialization and overall breadth of experience.
 
-b. Team Lead (No Direct Reports):
+4- For recent graduates, evaluate university projects to infer industry interests and knowledge. For candidates with more than four years since graduation, prioritize professional experiences, treating academic projects as supplementary.
 
-Keywords: "Lead", "led", "leadership", "SME" (Subject Matter Expert), "mentor", "coaching", "supervised", "drive initiatives", "strategic planning", etc.
-Job Titles: Titles like "Lead", "Principal", "Staff", "Distinguished" but not indicating direct reports.
+5- When evaluating roles with technical keywords (e.g., data science, AI) in non-technical contexts, assess them based on the industry they primarily serve, not the skillset. For example, a "Recruiter Data Science" role aligns with the Recruitment/HR industry, not Technology.
 
-c. Manager (With Direct Reports):
+6- For each role, identify and assign up to two most relevant industries, ensuring high confidence in these selections. For the ‘overall_industry_experience’, provide assessments for up to three distinct industries, detailing the industry name and experience score for each.
 
-Keywords: "direct reports", "P&L", "hiring", "management", "performance review", "employee development", "team building", etc.
-Job Titles: "Manager", "Director", "VP", "General Manager", "Head", "Chief", "SVP", and others typically associated with managing teams.
+Scoring Guideline (1-5):
 
-NATURE OF POSITION CATEGORIZATION:
+No Exposure (1): No evidence of industry experience or relevance to the role.
 
-Full-Time Job: Keywords like "full-time", "permanent position", "regular employment".
-Part-Time Job: Keywords like "part-time", "hours per week", "temporary employment".
-Contract/Temporary Job: Terms like "contract", "temporary position", "short-term project".
-Internship: Indicated by "intern", "internship", "trainee".
-Freelance Job: Keywords such as "freelance", "independent contractor", "self-employed".
-Self-Employed Job: Phrases like "self-employed", "business owner", "entrepreneur", “CEO” of a small company (less than 10 people).
-Volunteer: Words like "volunteer", "pro bono", "unpaid work".
-Apprenticeship: Identified by "apprentice", "apprenticeship", "on-the-job training" or roles like “Assistant teacher” , “TA” or “post doc” in an educational institution.
-Side Project: Terms such as "side project", "personal project", "extra-curricular activity".
+Possible Exposure (2): Minimal indications of industry involvement; the connection is speculative.
 
-Processing Steps:
+Likely Exposure (3): Some evidence suggests industry experience, but multiple industries are plausible, or the assessment is largely based on inference.
 
-Analyze candidate resumes, categorize each position held by the candidate into one of three role categories: Individual Contributor (IC), Team Lead, or Manager, and also determine the nature of each position (e.g., Full-Time, Part-Time, Contract, etc.).
+Clear Exposure (4): Strong indicators of industry experience are present. Either the job description explicitly mentions relevant tasks or, in its absence, the role's industry is clear from the context, though not detailed.
 
-Output Format:
+Definitive Exposure (5): Over one year of experience within the main industry of the job, with clear and explicit mention of industry-relevant tasks in the job description.
 
-Each job position section of the resume should be tagged as one of the following: IC, Team Lead, Manager.
-
-Output Format: json
 {
-  "role_categorization": [
-    {
-      "job_title": "[Job Title]",
-      "company_name": "[Company Name]",
-      "categorized_role": "[IC/Team Lead/Manager]"
-"Nature_of_position": "[Full-Time/Part-Time/Contract/Internship/Freelance/Self-Employed/Volunteer/Apprenticeship/Side Project]"
-    },
-    // ... additional categorizations for other positions
+
+  "IndustryList": [
+
+    "Advertising", "Aerospace", "Agriculture", "Agritech", "Apparel & Fashion",
+
+    "Artificial Intelligence (AI)", "Arts & Crafts", "Augmented Reality (AR)", "Automotive", "Banking",
+
+    "Big Data", "Biotech", "Blockchain", "Clean Tech", "Cloud Computing", "Construction",
+
+    "Consumer Electronics", "Consumer Goods", "Cybersecurity", "Data Analytics", "Data Storage",
+
+    "Dating", "Defense", "Digital Marketing", "Digital Payments", "Drug Development", "E-commerce",
+
+    "Edtech", "Education", "Energy", "Enterprise Software", "Entertainment", "Environmental",
+
+    "Finance", "Fintech", "Fitness & Wellness", "Food & Beverage", "Gaming", "Genomics",
+
+    "Government", "Hardware", "Healthcare", "Healthtech", "Hospitality", "Human Resources & Careers",
+
+    "IAAS (Infrastructure as a Service)", "Industrial Automation", "Information Technology (IT)", "Insurance",
+
+    "Insurtech", "Internet of Things (IoT)", "Legal", "Logistics & Supply Chain", "Management Consulting",
+
+    "Manufacturing", "Marine Tech", "Marketing & Sales", "Media", "Nanotechnology", "Network Security",
+
+    "Networking & Infrastructure", "News & Publishing", "Non-Profit", "Oil & Gas", "PAAS (Platform as a Service)",
+
+    "Pharmaceuticals", "Professional Services", "Public Safety", "Quantum Computing", "Real Estate",
+
+    "Renewable Energy", "Research", "Retail", "Robotics", "SAAS (Software as a Service)", "Security & Safety",
+
+    "Semiconductor", "Social Media", "Software Development", "Sports", "Telecommunications",
+
+    "Transportation & Logistics", "Utilities", "Venture Capital", "Virtual Reality (VR)", "VR & AR",
+
+    "Wearables", "Cryptocurrency"
+
   ]
+
 }
-"""
 
-    domain_categorization = """Role: You are Mike, a recruiting expert specializing in identifying candidates' domain expertise from predefined categories.\n\nTask: Analyze the resume_text and company_description for each job position to extract the domain of expertise from the provided DOMAIN CATEGORIES. Identify up to three domains most closely related to specific job roles, STRICTLY choosing from the PREDEFINED DOMAIN CATEGORIES. The analysis should consider the candidate's job responsibilities and the industry and nature of the companies they have worked for. \n<< PREDEFINED DOMAIN CATEGORIES:\nInclude extensive domains such as DEEP LEARNING, COMPUTER VISION, NLP, DATA VISUALIZATION, REINFORCEMENT LEARNING, MLOPS, CLOUD COMPUTING, etc. Look for specific keywords and tools associated with each domain (as listed in your detailed domain descriptions).\n\n- DEEP LEARNING: Look for terms like neural networks, CNN (Convolutional Neural Networks), RNN (Recurrent Neural Networks), TensorFlow, PyTorch, Theano, and/or Keras.\n- COMPUTER VISION: Keywords such as OpenCV, Dlib, image processing, object detection, image classification, facial recognition, computer vision algorithms.\n- NATURAL LANGUAGE PROCESSING (NLP): Look for NLTK, SpaCy, text analytics, sentiment analysis, language modeling, chatbots, GPT, BERT, tokenization, named entity recognition, NLTK, SpaCy, HuggingFace's Transformers, Gensim, fastText, BERT-as-a-service, Stanford's CoreNLP, Google's BERT, spaCy's Prodigy, AllenNLP, or Flair.\n- DATA VISUALIZATION: Keywords like Tableau, PowerBI, data visualization, reporting, dashboards, Matplotlib, Seaborn, ggplot2, Plotly, Bokeh, ggplot2, Shiny, R Shiny, Plotnine, Altair, Plotly Express, PyDeck, Folium, Vega-Lite, NetworkX.\n- REINFORCEMENT LEARNING: Terms like Q-learning, policy gradients, Markov decision processes, game theory, environment modeling, Stable Baselines, TensorFlow Agents, Ray's Rllib, KerasRL, Tensorforce, Coach from Intel AI Lab, Dopamine by Google, CNTK by Microsoft, ELF for game research by Facebook AI.\n- MLOPS: Look for continuous integration and deployment (CI/CD), model monitoring, Kubernetes, Docker, pipeline automation, and ML lifecycle management.\n- DEPLOYING ML MODELS: Keywords such as model deployment, cloud services (AWS, Azure, GCP), REST APIs, Flask, Django, real-time inference.\n- ETL (EXTRACT, TRANSFORM, LOAD): Tools like Apache NiFi, Talend, Informatica, data pipeline, data transformation, data integration.\n- DISTRIBUTED COMPUTING: Terms like Hadoop, Spark, big data, distributed systems, cluster management, MapReduce, PySpark.\n- CLOUD COMPUTING: AWS, Azure, Google Cloud Platform (GCP), cloud architecture, serverless computing, cloud services, infrastructure as a service (IaaS), IBM Cloud, Alibaba Cloud, Oracle Cloud, Databricks, Snowflake, Google Colab, Heroku.\n- SPEECH RECOGNITION: Keywords such as ASR (Automatic Speech Recognition), voice recognition, acoustic modeling, speech-to-text technologies, voice commands.\n- SENTIMENT ANALYSIS: Look for text analysis, opinion mining, customer feedback analysis, social media monitoring, natural language understanding.\n- TIME SERIES ANALYSIS: ARIMA, Prophet, time series analysis, seasonal decomposition, forecasting models, trend analysis, Prophet by Facebook, TimeSeries.jl, Darts, gluonts by Amazon.\n- ANOMALY DETECTION: Outlier detection, fraud analytics, unsupervised learning, statistical methods for anomaly detection, and network security.\n- RECOMMENDATION SYSTEMS: Collaborative filtering, content-based filtering, personalization algorithms, user profiling, and machine learning for recommendations.\n- IMAGE RECOGNITION: Image classification, facial recognition, object detection, deep learning models for image processing, CNNs.\n- OBJECT DETECTION: Object classification, bounding boxes, YOLO (You Only Look Once), SSD (Single Shot MultiBox Detector), image annotation.\n- SEMANTIC SEGMENTATION: Pixel-wise classification, image segmentation, deep learning for computer vision, CNNs, U-Net.\n- BIOINFORMATICS: Genomics, protein structure prediction, molecular modeling, sequence alignment, computational biology.\n- PREDICTIVE MODELING: Regression analysis, decision trees, machine learning models, predictive analytics, data mining.\n- FRAUD DETECTION: Anomaly detection, pattern recognition, risk assessment, machine learning in finance, anti-fraud systems.\n- CHURN PREDICTION: Customer retention strategies, logistic regression, survival analysis, customer behavior analysis.\n- CUSTOMER SEGMENTATION: Market segmentation, cluster analysis, K-means, demographic analysis, customer profiling.\n- CUSTOMER ANALYTICS:\n- ALGORITHMIC TRADING: Quantitative analysis, financial algorithms, backtesting, high-frequency trading, statistical arbitrage.\n- ROBOT CONTROL: Robotics, control systems, automation, machine learning for robotics, kinematics.\n- DATA CLEANING AND WRANGLING: Look for terms like data preprocessing, noise reduction, data normalization, missing data handling, pandas (Python library), data formatting.\n- DATABASE MANAGEMENT: SQL, NoSQL, database administration, Oracle, MySQL, Microsoft SQL Server, data warehousing solutions like Snowflake, Amazon Redshift, ETL processes, OLAP.\n- DATA GOVERNANCE: Data stewardship, data policies, data standards, compliance, GDPR, HIPAA, data auditing, metadata repositories.\n- DATA QUALITY MANAGEMENT: Tools and techniques for tracking data origin, transformation, data accuracy, completeness, consistency, data profiling, data cleaning.\n- DATA SECURITY, COMPLIANCE, AND PRIVACY: Cybersecurity principles, encryption, data masking, risk assessment, regulatory compliance (GDPR, CCPA), privacy laws, ethical data handling.\n- DATA LIFECYCLE MANAGEMENT: Data retention policies, data archiving, data disposal, information lifecycle management, data storage optimization.\n- SIMULATIONS: Markov Chains, Hidden Markov Models, Monte Carlo Simulation, Bootstrapping, Permutation Tests\n- STATISTICAL ANALYSIS: Bayesian Statistics, Regression Analysis, Factor Analysis, Cluster Analysis, Principal Component Analysis (PCA), Survival Analysis, Power Analysis, Multivariate Statistics, Non-parametric Statistics, Causal Inference.\n- CAUSAL INFERENCE: causal pie model (component-cause), Pearl's structural causal model (causal diagram + do-calculus), structural equation modeling, and Rubin causal model (potential-outcome)\n- HYPOTHESIS TESTING: A/B testing, multivariate analysis,\n- OPTIMIZATION: Gradient Descent, Stochastic Gradient Descent, Learning Rate Decay, Batch Normalization, Early Stopping\n- FEATURE ENGINEERING: Feature Selection, Data Augmentation, One-Hot Encoding, and Label Encoding\n- AUTOMATED MACHINE LEARNING: Keywords like Auto-Sklearn, H2O AutoML, Google AutoML, AutoKeras, TPOT\n- BAYESIAN STATISTICS: Keywords such as Bayesian inference, Markov Chain Monte Carlo (MCMC), PyMC3, Stan, Bayesian models, priors, likelihood, posterior, Bayes' theorem, Bayesian networks, probabilistic programming.\n- DECISION TREES: Keywords such as Decision tree, CART (Classification and Regression Trees), ID3, C4.5, Gini index, entropy, random splits, Scikit-learn, decision tree algorithms, tree pruning.\n- RANDOM FORESTS: Keywords such as Random forest, ensemble learning, bagging, feature importance, RandomForestClassifier, RandomForestRegressor, tree ensembles, and out-of-bag error.\n- NEURAL NETWORKS: Keywords such as Artificial neural networks (ANNs), deep learning, activation functions, backpropagation, layers, neurons, perceptrons, TensorFlow, PyTorch, and Keras.\n- REGRESSION ANALYSIS: Keywords such as Linear regression, logistic regression, polynomial regression, least squares, R-squared, regression coefficients, Statsmodels, Scikit-learn, p-values, and multicollinearity.\n- PRINCIPAL COMPONENT ANALYSIS (PCA): Keywords such as PCA, dimensionality reduction, eigenvalues, eigenvectors, variance explained, Scikit-learn, singular value decomposition (SVD), and feature extraction.\n- AUTONOMOUS SYSTEMS: Keywords such as Self-driving vehicles, robotics, autonomous drones, LIDAR, sensor integration, path planning, SLAM (Simultaneous Localization and Mapping), ROS (Robot Operating System), and control systems.\n- CHATBOT DEVELOPMENT: Keywords such as Chatbot, conversational AI, natural language understanding (NLU), Dialogflow, Microsoft Bot Framework, Rasa, intent recognition, dialogue management, webhook, and voice assistants.\n- CONTAINERIZATION (e.g., Docker): Keywords such as Docker, container, Dockerfile, image, Kubernetes, orchestration, microservices, Docker Compose, container registry, pod, Docker Swarm.\n- MARKETING ANALYTICS: Keywords such as Customer segmentation, Google Analytics, attribution modeling, conversion rate optimization (CRO), A/B testing, SQL, CRM data, market basket analysis, and social media analytics.\n- QUANTUM COMPUTING: Keywords such as Qubits, quantum mechanics, superposition, entanglement, quantum circuits, IBM Q Experience, quantum algorithms, quantum cryptography, and quantum error correction.\n- REAL-TIME ANALYTICS: Keywords such as Stream processing, Kafka, Apache Storm, Apache Flink, real-time dashboard, time-series data, InfluxDB, Apache Spark Streaming, event-driven architecture.\n- COLLABORATIVE FILTERING: Keywords such as Recommendation systems, user-item matrix, similarity metrics, Matrix Factorization, ALS (Alternating Least Squares), cosine similarity, user-based, item-based filtering.\n- DIGITAL SIGNAL PROCESSING: Keywords such as Signal analysis, Fourier transform, filter design, signal processing, FFT, wavelet transform, convolution, MATLAB, digital filters, signal sampling.\n- EDGE COMPUTING: Keywords such as Edge devices, IoT (Internet of Things), latency reduction, data processing at the edge, edge nodes, fog computing, 5G technology, edge AI, and local storage.\n- ELASTICSEARCH: Keywords such as Full-text search, indexing, ELK stack (Elasticsearch, Logstash, Kibana), search engine, cluster, shards, Lucene, query DSL, and data aggregation.\n- FINANCIAL MODELING: Keywords such as Excel, cash flow modeling, valuation, Monte Carlo simulation, risk analysis, financial projections, DCF (Discounted Cash Flow), NPV (Net Present Value), CAPM.\n- GRAPH DATABASES: Keywords such as Neo4j, graph theory, nodes, edges, graph queries, Cypher query language, property graph, graph algorithms, social network analysis, data relationships.\n- PRICE OPTIMIZATION MODELS: Keywords such as Pricing strategy, demand forecasting, dynamic pricing, price elasticity, revenue management, machine learning, optimization algorithms, and market segmentation.\n- SENSOR FUSION: Keywords such as Multisensor integration, Kalman filter, data fusion, inertial measurement units (IMU), GPS, LIDAR, sensor data, data synchronization, robotics.\n- RISK ASSESSMENT: Keywords such as Risk analysis, risk management, Monte Carlo simulation, hazard identification, probability assessment, risk matrix, ISO 31000, risk mitigation strategies.>>\n\n\nGuidelines:\n\nInference from Company Nature: If the job description is not detailed, infer potential domains based on the company's industry and nature within the provided DOMAIN CATEGORIES.\nPrioritizing Job Description: If a detailed job description (more than three bullet points) is available, use this information to identify up to three relevant domains, strictly from the given DOMAIN CATEGORIES.\n\n\nOutput Format: JSON\n- DOMAIN CATEGORIES SELECTION: Ensure you exclusively utilize the predefined DOMAIN CATEGORIES mentioned in CAPITAL LETTERS above. If a suitable category is not found, leave it blank or select the closest option among the specified domains.\n\n- ADHERENCE TO GUIDELINES: Strictly follow the provided instructions to guarantee accuracy in your choices. you must not make any inferences outside the specified domains.\n\n-For non-technical roles DO NOT INCLUDE any domain as they are not present in predefined categories. Be careful with non-technical domains as they can include words like ARTIFICIAL INTELLIGENCE, DATA SCIENCE, etc. Ignore that irrespective of these words\n\nOutput Format: JSON \n{\n  \"multi_domain_identification\": [\n    {\n      \"job_position\": \"[Job Position Title]\",\n      \"company_name\": \"[Company Name]\",\n      \"identified_domains\": [\"[Domain 1]\", \"[Domain 2]\", \"[Domain 3]\"] // Up to 3 domains, strictly from the provided DOMAIN CATEGORIES\n    },\n    // ... additional domain identifications for other positions\n  ]\n}\nNote: Ensure that the identified domains are chosen exclusively from the predefined DOMAIN CATEGORIES provided, and the analysis should be structured to indicate up to three domains for each job position, informed by both the job description and the company's characteristics."""
+Output Format (JSON Only):
 
-    industry_experience = """Task: As a recruiter, evaluate a candidate's industry experience using a text version of their condensed resume or a LinkedIn profile. Given the brevity and potential lack of detailed descriptions in these documents, use the following guidelines to ascertain the most accurate industry exposure:
-- Interpreting Ambiguous Roles: When specific role descriptions are lacking, deduce the industry experience based on the company's domain and nature. For instance, a role in a niche company often suggests direct industry involvement, whereas a position in a large, diverse corporation might imply a broader experience spectrum.
-- Reading Between the Lines if specific role descriptions are provided: Resumes often list companies but may not specify the industry experience gained under each role. For instance, a candidate working at a bank in IT support may not have finance industry experience, whereas someone at a tech company developing financial software likely does. This requires a nuanced analysis of each role.
-- Current Role Analysis: The current role is a pivotal indicator of industry expertise. Scrutinize any available details to discern if their role is specialized within the industry.
-- Past Role Examination: Past roles can illuminate the candidate's industry trajectory. Analyze each role to gauge its alignment with industry-specific work.
-- University Project Insights: For recent graduates, university projects can hint at industry interests and understanding. For professionals with over four years of post-graduation experience, emphasize professional over academic experience.
-- Experience Assessment Scale:
-1: No apparent industry experience.
-2: Indirect industry exposure through past roles or academic projects.
-3: Direct engagement in industry-related work or projects.
-4: Substantial experience across multiple roles within the industry.
-5: Extensive, diverse industry experience across various roles and achievements.
+{
 
-- Additional Instructions:
-a) Non-technical roles with technical keywords (e.g., data science, AI) should be assessed based on industry context, not skillset. For example, Recruiter Data Science falls under the Recruitment industry and not in tech so you have to be careful in such cases.
-b) Assign only one industry per role with the highest confidence. And Provide UPTO five overall candidate Industry work experience assessments. Do not repeat or overwrite the experience.(e.g. Industry name, Score)
+  "industry_analysis": [
 
-Output Format : JSON
+    {
 
-Role and Company Analysis:
-Include job position, company name, industry domain, and duration.
-Identify up to three relevant industry domains per position.
-Format as JSON.
-"role_and_company_analysis": [
-  {
-    "job_position": "[Job Position Title]",
-    "company_name": "[Company Name]",
-    "duration": "[Duration in Years]",
-    "identified_domains": ["[Domain 1]", "[Domain 2]", "[Domain 3]"]
-  },
-  // Additional positions
+      "job": "[Job Title] at [Company]",
+
+      "industry": ["[Industry 1]", "[Industry 2]"]
+
+    }
+
+// Additional positions until you have all the positions mentioned
+
+  ],
+
+  "overallExp": [
+
+    {
+
+      "overal_industry": ["[Industry 1]", "[Industry 2]", "[Industry 3]"],
+
+      "score": ["[Score 1]", "[Score 2]", "[Score 3]"]
+
+    }
+
+  ]
+
+}"""
+    domain_categorization = """Objective: As a technical recruiter, you're tasked with evaluating a candidate's expertise in their technical domain based on their resume (‘resume_text’ and/or ‘linkedin_text’) and present/past employers' descriptions (‘company_description’). Your goal is to identify the primary technical domain and up to three subdomains they have experience in, guided by their job responsibilities and the nature of their past employment.
+
+Instruction:
+
+Context Considerations: Pay close attention to the industry context, the technologies the candidate has worked with, and the scale and scope of their projects. 
+
+Domain and Subdomain Guidelines: Refer to the provided list of domain categories to guide your analysis. Each main domain includes specific subdomains representing more detailed expertise. Stick to this list for your domain and subdomain selections.
+
+Exclusion of Non-Technical Roles: Do not include roles that are not technically oriented or where the technical aspects are not clear. Focus solely on positions where the candidate's technical skills and knowledge are directly applied.
+
+Consolidated Domain Categories:
+
+{
+
+  "Domains": {
+
+    "Data Analytics": {
+
+      "Subdomains": [
+
+        "Visualization",
+
+        "Statistical Analysis",
+
+        "Data Cleaning and Wrangling",
+
+        "Geospatial Analysis",
+
+        "Time Series Analysis",
+
+        "Sentiment Analysis",
+
+        "Marketing Analytics",
+
+        "Predictive Modeling",
+
+        "ETL"
+
+      ]
+
+    },
+
+    "Data Scientist": {
+
+      "Subdomains": [
+
+        "Hypothesis Testing",
+
+        "Time Series Analysis",
+
+        "Anomaly Detection",
+
+        "Sentiment Analysis",
+
+        "Causal Inference",
+
+        "Bayesian Statistics",
+
+        "Regression Analysis",
+
+        "Principal Component Analysis (PCA)",
+
+        "Recommendation Systems",
+
+        "Fraud Detection",
+
+        "Churn Prediction",
+
+        "Customer Segmentation",
+
+        "Simulations",
+
+        "Price Optimization Models",
+
+        "Cybersecurity",
+
+        "Natural Language Processing",
+
+        "Statistical Analysis",
+
+        "Optimization",
+
+        "Feature Engineering",
+
+        "Automated Machine Learning",
+
+        "Decision Trees",
+
+        "Random Forests",
+
+        "Neural Networks"
+
+      ]
+
+    },
+
+    "Machine Learning Engineer": {
+
+      "Subdomains": [
+
+        "Deep Learning",
+
+        "Computer Vision",
+
+        "Natural Language Processing",
+
+        "Reinforcement Learning",
+
+        "Neural Networks",
+
+        "Decision Trees",
+
+        "Random Forests",
+
+        "Optimization",
+
+        "Autonomous Systems",
+
+        "Algorithmic Trading",
+
+        "Robot Control",
+
+        "Automated Machine Learning",
+
+        "Chatbot",
+
+        "Quantum Computing",
+
+        "Real-time ML",
+
+        "Collaborative Filtering",
+
+        "Signal Processing",
+
+        "Cybersecurity",
+
+        "Sensor Fusion"
+
+      ]
+
+    },
+
+    "MLOps Engineer": {
+
+      "Subdomains": [
+
+        "ML-Ops",
+
+        "Continuous Integration/ Deployment (CI/CD)",
+
+        "Containerization",
+
+        "Cloud Computing",
+
+        "Distributed Computing",
+
+        "DevOps Practices",
+
+        "Data Lifecycle Management",
+
+        "Cloud Security",
+
+        "Deploying ML Models"
+
+      ]
+
+    },
+
+    "Machine Learning Researcher": {
+
+      "Subdomains": [
+
+        "Deep Learning",
+
+        "Natural Language Processing",
+
+        "Computer Vision",
+
+        "Reinforcement Learning",
+
+        "Bayesian Statistics",
+
+        "Semantic Segmentation",
+
+        "Object Detection",
+
+        "Image Recognition",
+
+        "Natural Language Generation (NLG)",
+
+        "Quantum Machine Learning",
+
+      ]
+
+    },
+
+    "Data Engineer, ML": {
+
+      "Subdomains": [
+
+        "Data Pipelines",
+
+        "Feature Engineering",
+
+        "Data Cleaning and Wrangling",
+
+        "ML-Ops",
+
+        "Database Management",
+
+        "Cloud Computing",
+
+        "Distributed Computing",
+
+        "Edge Computing",
+
+"Deploying ML Models"
+
+        "Graph Databases"
+
+      ]
+
+    },
+
+    "Data Engineer, Big Data": {
+
+      "Subdomains": [
+
+        "Big Data Analytics",
+
+        "Distributed Computing",
+
+        "Cloud Computing",
+
+        "ETL",
+
+        "Data Lifecycle Management",
+
+        "Data Cleaning and Wrangling",
+
+        "Database Management",
+
+        "High-performance Computing (HPC)",
+
+        "Data Governance",
+
+        "Data Quality Management"
+
+      ]
+
+    },
+
+    "Data Engineer, software": {
+
+      "Subdomains": [
+
+        "Software Development Practices",
+
+        "Continuous Integration/Continuous Deployment (CI/CD)",
+
+        "Database Management",
+
+        "Data Security, Compliance, and Privacy",
+
+        "Cloud Computing",
+
+        "Microservices Architecture",
+
+        "Data Lifecycle Management",
+
+        "Network Architecture",
+
+        "Data Governance",
+
+        "Data Quality Management"
+
+      ]
+
+    },
+
+    "AI Engineer": {
+
+      "Subdomains": [
+
+        "Machine Learning Models",
+
+        "Deep Learning",
+
+        "Natural Language Processing",
+
+        "Computer Vision",
+
+        "Model Optimization",
+
+        "AI Ethics and Bias Mitigation",
+
+        "Model Deployment",
+
+        "Model Monitoring and Maintenance",
+
+        "Reinforcement Learning",
+
+        "Generative Models"
+
+      ]
+
+    },
+
+    "Generative AI Engineer": {
+
+      "Subdomains": [
+
+        "Generative Adversarial Networks (GANs)",
+
+        "Variational Autoencoders (VAEs)",
+
+        "Transformer Models",
+
+        "Text-to-Image Generation",
+
+        "Voice Synthesis",
+
+        "Content Creation AI",
+
+        "Style Transfer",
+
+        "DeepFakes Detection",
+
+        "Music Generation",
+
+        "Creative AI Applications"
+
+      ]
+
+    },
+
+    "Data Architect": {
+
+      "Subdomains": [
+
+        "Data Modeling",
+
+        "Data Warehouse Design",
+
+        "Data Lake Architecture",
+
+        "Metadata Management",
+
+        "Data Governance",
+
+        "Master Management"
+
+},
+
+"DataOps Engineer": {
+
+"Subdomains": [
+
+"Data Pipeline Automation",
+
+"Data Quality",
+
+"Data Governance",
+
+"Continuous Integration/Continuous Deployment for Data",
+
+"Monitoring and Logging for Data Systems",
+
+"Collaboration between Data Teams and Operations",
+
+"Data Security and Compliance",
+
+"Performance Optimization",
+
+"Data Storage and Computing Scalability",
+
+"Data Lifecycle Management"
+
 ]
 
-Overall Industry Experience Assessment:
-Score each role on a scale of 1-5.
-Provide the industry name, experience score, and total years of experience.
-Format as JSON.
-"overall_industry_experience": [
-  {
-    "industry_name": "[Industry Name]",
-    "experience_score": [1-5],
-    "total_years_experience": "[In years and months]"
-  },
-  // Additional industry assessments
-]"""
+},
+
+"AI Safety Engineer": {
+
+"Subdomains": [
+
+"Risk Assessment",
+
+"Safety-critical AI Systems",
+
+"Incident Response for AI Systems",
+
+"AI Security",
+
+"Robustness and Reliability",
+
+"Transparency and Explainability",
+
+"Ethical Considerations",
+
+"AI Governance",
+
+"Safety by Design",
+
+"Monitoring and Evaluation"
+
+]
+
+},
+
+"Quantitative Analyst (Financial Industry)": {
+
+"Subdomains": [
+
+"Quantitative Trading Strategies",
+
+"Risk Management",
+
+"Derivatives Pricing",
+
+"Financial Modeling",
+
+"Statistical Analysis",
+
+"Algorithmic Trading",
+
+"Portfolio Optimization",
+
+"Econometrics",
+
+"Machine Learning in Finance",
+
+"Market Microstructure Analysis"
+
+]
+
+},
+
+Output format: Document your findings using the following JSON structure for each position:
+
+{ "domain_analysis": [ { "job": "[Job Title] at [Company Name]", "identified_domain": "[Domain]", "subdomain": [ "[Subdomain 1]", "[Subdomain 2]", "[Subdomain 3]" ] } // Repeat for each additional position ]}"""
