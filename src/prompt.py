@@ -1,9 +1,59 @@
 from dataclasses import dataclass
 
-model = ['gpt-3.5-turbo-1106','gpt-4-1106-preview', 'gpt-3.5-turbo', 'gpt-4', "gpt-3.5-turbo-1106"]
+model = ['gpt-3.5-turbo-0125','gpt-4-1106-preview', 'gpt-3.5-turbo', 'gpt-4', "gpt-3.5-turbo-1106"]
 
 @dataclass
 class JobRoleExtractor:
+    resume_parser = """You are Mike, an excellent resume parser. Read the resume give the major portions of the resume such as Professional Statement/Personal statement, Education, Skills, Work Experience(Copy Paste), Projects, Publications(if any), patents(if any)
+
+NOTE: DO NOT MISS any information from responsibilities of work experience. 
+
+output format: JSON
+
+{
+  "contact_details": {"name": "",
+"contact no": "",
+"email": "",
+"address": "",
+"linkedin url": "",
+"github url": ""
+}
+  "Professional Statement/Personal statement": "",
+  "Education": [
+    {
+      "Institution": "",
+      "Start Date": "",
+      "End date": "",
+      "Degree": Bachelors, Masters, Phd,
+      "Field of study": "",
+    },....
+  ],
+  "Work Experience": [(use company name for main key as there can be multiple positions for same company)
+   "Company Name":[ 
+{
+      "Position 1": "",
+      "Start Date": "",
+      "End Date": "",
+      "Responsibilities": [exact copy paste from provided resume]
+    },
+{
+      "Position 2": "",
+      "Start Date": "",
+      "End Date": "",
+      "Responsibilities": [exact copy paste all the content including bullet points, achievements(if there), methods(if there) from given resume]
+    }],..........
+],
+  "Skills": [if mentioned explicitly],
+   "Projects": [
+    {
+      "Title": "",
+      "Description": ""
+    },.......
+  ],
+  "Publications": (if any),
+  "Patents": (if any)
+}
+"""
     job_role_extractor_instructions = """Role: You are a technical recruiter.
 
  
@@ -12,7 +62,7 @@ Task: Your task is to ANALYZE the resume_text and/or linkedin_text. For each job
 
  
 
-Determine the primary and secondary job functions by considering the job title, job description, skills, technologies, company nature, and common phrases associated with each job function. Ensure to STRICTLY choose job functions from the job_function_guidelines list provided below. If no listed job functions apply, choose "N/A".
+Determine the primary and secondary job functions by considering the job title, job description, skills, technologies, company nature, and common phrases associated with each job function. Ensure to STRICTLY choose job functions from the job_function_guidelines list provided below. If no listed job functions apply, choose N/A.
 
 Categorize each position into one of three roles: Individual Contributor, Team Lead, or Manager, as defined in the Role Hierarchy Category.
 
@@ -51,12 +101,19 @@ Output JSON format:
   "job_functions": [
 
     {
+      "job_title": "",
 
+      "date_range":"",
+    
       "job": "[Job Title] at [Company Name]",
 
       "primary_function": "[Primary Job Function]",
 
       "secondary_function": "[Secondary Job Function]",
+
+      "degree": "only one word among these is needed<[High school, Bachelor, Master, Doctorate, No, Doctor]>"
+
+      "abbreviation": "[<Abbreviation> (<[High school, Bachelor, Master, Doctorate, No, Doctor]> in <field of study>]) e.g B.A. (Bachelor of Arts)"
 
       "role_hierarchy": "[Individual Contributor, Team Lead, Manager]",
 
@@ -175,7 +232,8 @@ Output Format (JSON Only):
   "industry_analysis": [
 
     {
-
+      "job_title": "",
+    
       "job": "[Job Title] at [Company]",
 
       "industry": ["[Industry 1]", "[Industry 2]"]
@@ -639,4 +697,4 @@ Consolidated Domain Categories:
 
 Output format: Document your findings using the following JSON structure for each position:
 
-{ "domain_analysis": [ { "job": "[Job Title] at [Company Name]", "identified_domain": "[Domain]", "subdomain": [ "[Subdomain 1]", "[Subdomain 2]", "[Subdomain 3]" ] } // Repeat for each additional position ]}"""
+{ "domain_analysis": [ {"job_title": "", "job": "[Job Title] at [Company Name]", "identified_domain": "[Domain]", "subdomain": [ "[Subdomain 1]", "[Subdomain 2]", "[Subdomain 3]" ] } // Repeat for each additional position ]}"""

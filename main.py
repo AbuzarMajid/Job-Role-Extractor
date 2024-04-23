@@ -23,11 +23,16 @@ from pydantic import BaseModel
 app = FastAPI()
 
 class categorization(BaseModel):
-    resume_text: str
+    resume_text: str = ''
     companies_description: str = ''
+    linkedin_text: str = ''
     domain_categorization: bool = True
     job_function_extraction: bool = True
     industry_experience_extraction: bool = True
+
+
+    #inputs models
+    #bool variable
 
 app = FastAPI()
 
@@ -35,9 +40,11 @@ app = FastAPI()
 async def job_role_function(categorizer: categorization):
     try:
         final_results = {}
-        resume_text = categorizer.resume_text
+        resume_text = categorizer.linkedin_text
+        if categorizer.resume_text != "":
+            resume_text = categorizer.linkedin_text + "\n" + categorizer.resume_text
         companies_description = categorizer.companies_description
-        response_obj = RawResponse(client=client, model=model[2], resume=resume_text)
+        response_obj = RawResponse(client=client, model=model[2], resume=f"""{resume_text}""")
 
         with ThreadPoolExecutor() as executor:
             futures = []
