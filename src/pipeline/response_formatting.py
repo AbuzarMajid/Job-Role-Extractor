@@ -12,11 +12,11 @@ class RawResponse:
         self.model = model
         self.resume = resume
         
-    def job_function(self):
+    def job_function(self, prompt):
         try:
-            prompt_obj = JobRoleExtractor()
+            # prompt_obj = JobRoleExtractor()
             message = [
-                {"role": "system", "content": prompt_obj.job_role_extractor_instructions},
+                {"role": "system", "content": prompt},
                 {"role": "user", "content": self.resume}
             ]
             response = create_chat_completion(client=self.client, model_name=self.model, messages=message)
@@ -25,12 +25,12 @@ class RawResponse:
         except Exception as e:
             raise CustomExcetions(e, sys)
         
-    def domain_categorization(self, company_description):
+    def domain_categorization(self, prompt, company_description):
         try:
-            prompt_obj = JobRoleExtractor()
+            # prompt_obj = JobRoleExtractor()
             content = self.resume + "\n" + company_description
             message = [
-                {"role": "system", "content": prompt_obj.domain_categorization},
+                {"role": "system", "content": prompt},
                 {"role": "user", "content": content}
             ]
             response = create_chat_completion(client=self.client, model_name=self.model, messages=message)
@@ -39,12 +39,12 @@ class RawResponse:
         except Exception as e:
             raise CustomExcetions(e, sys)
         
-    def industry_experience(self, company_description):
+    def industry_experience(self, prompt, company_description):
         try:
-            prompt_obj = JobRoleExtractor()
+            # prompt_obj = JobRoleExtractor()
             content = self.resume + "\n" + company_description
             message = [
-                {"role": "system", "content": prompt_obj.industry_experience},
+                {"role": "system", "content": prompt},
                 {"role": "user", "content": content}
             ]
             response = create_chat_completion(client=self.client, model_name=self.model, messages=message)
