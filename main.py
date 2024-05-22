@@ -134,7 +134,7 @@ async def job_role_function(categorizer: categorization):
             #                         "overlapping_roles" : check_overlap_all(final["profile_analysis"]),
             #                         "mapping_info": matching_experience(request=json.loads(categorizer.linkedin_text), prompt_response=final)
             #                         }
-            return map_talent_info(final_dict=final, linkenin_text=linkedin_text)
+            return final, map_talent_info(final_dict=final, linkenin_text=linkedin_text)
         
         except Exception as e:
             raise CustomExcetions(e, sys)

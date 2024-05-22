@@ -196,9 +196,20 @@ def matching_experience(request, prompt_response):
 def map_talent_info(final_dict, linkenin_text):
     merge_dicts = lambda x, y: {**x, **y}
     mapped_data = []
+    # mapped_data = [
+    #     merge_dicts(company_data, next((profile for profile in final_dict["profile_analysis"] if profile.get("job_title") == company_data["title"]), {}))
+    #     for company_data in linkenin_text["data"]["experiences"]
+    # ]
     mapped_data = [
-        merge_dicts(company_data, next((profile for profile in final_dict["profile_analysis"] if profile.get("job_title") == company_data["title"]), {}))
-        for company_data in linkenin_text["data"]["experiences"]
+    merge_dicts(
+        company_data,
+        next(
+            (profile for profile in final_dict["profile_analysis"] 
+             if profile.get("job_title") == company_data["title"] and profile.get("company_id") == company_data["company_id"]),
+            {}
+        )
+    )
+    for company_data in linkenin_text["data"]["experiences"]
     ]
     for each in mapped_data:
         each.pop("job_title", None)
