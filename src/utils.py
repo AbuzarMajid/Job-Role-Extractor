@@ -81,8 +81,10 @@ def response_formatter(resume_information: dict, job_functions: bool, domain_cat
             if education:
                 if resume_information["resume_information"]['educations']:
                     education = resume_information["resume_information"]['educations']
+                    # print(f"--------------{education}")
                     profile_analysis.append({"educations": education})
-
+                else: 
+                    profile_analysis.append({"educations": []})
             return {"profile_analysis": profile_analysis}
         
         # when job function and is false and industry expereince and domain categorization is true
@@ -115,6 +117,7 @@ def response_formatter(resume_information: dict, job_functions: bool, domain_cat
             if education:
                 if resume_information["resume_information"]['educations']:
                     education = resume_information["resume_information"]['educations']
+                    print(f"+-------------------------{education}")
                     profile_analysis.append({"educations": education})
 
             return {"profile_analysis": profile_analysis}
@@ -345,9 +348,13 @@ def map_talent_info(final_dict, linkenin_text):
     industry_scores = {}
 
     # Map the experience lists together
-    for i in range(len(industries)):
-        industry_scores[industries[i]] = score[i]
-
+    if len(industries) > 0:
+        for i in range(len(industries)):
+            # try:    
+                industry_scores[industries[i]] = score[i]
+            # except:
+            #     industry_scores[industries[i]] = ""
+            #     continue
     # Deleting the title key from final dictionery
 
 
@@ -355,7 +362,7 @@ def map_talent_info(final_dict, linkenin_text):
     linkenin_text["mapping_info"] = matching_experience(request=linkenin_text, prompt_response=final_dict)
 
     linkenin_text["overall_experience"] = industry_scores
-    return (linkenin_text)
+    return linkenin_text
 
 async def call_api(
     url,
@@ -387,6 +394,7 @@ async def call_api(
                 return json.loads(response_json["choices"][0]["message"]["content"])
             except:
                 print("entry")
+                print(response_text)
                 return response_text, response_status_code
                     
 def get_urls_and_headers(resume_text, companies_description, education_info):
@@ -414,7 +422,7 @@ def get_urls_and_headers(resume_text, companies_description, education_info):
                                         }
                                     ],
                                     "temperature": 0,
-                                    "max_tokens": 2000,
+                                    "max_tokens": 4000,
                                     "top_p": 1,
                                     "response_format": { "type": "json_object" },
                                     "frequency_penalty": 0,
@@ -427,7 +435,7 @@ def get_urls_and_headers(resume_text, companies_description, education_info):
                                         "role": "system",
                                         "content": [
                                             {
-                                            "text": "\"Role: As a technical recruiter, evaluate a candidate'\''s industry experience based on their ‘resume_text’ and/or ‘linkedin_text’ and past employers'\'' descriptions (‘company_description’). \nUse the ‘Industry List’ below to accurately align the candidate'\''s background with specific industry criteria. \nFor every role in the resume, including multiple positions at the same company, assess each job title independently to comprehensively capture the candidate'\''s industry experience across all roles.\n\nInstructions:\n1 - Interpreting role context with company insights: Use '\''company_description'\'' for clarity when ‘resume_text’ and/or ‘linkedin_text’ lacks detail about role descriptions and industries. This background reveals the company’s sector and offerings, providing clues to a candidate'\''s industry exposure. For instance, a \"Data Scientist\" role gains specificity if the company is known for Cybersecurity, suggesting relevant industry experience. This approach ensures accurate evaluations of a candidate'\''s exposure to specific industries, especially when their roles are broadly defined.\n2- Pay special attention to the context of each role for a nuanced assessment; for example, an IT support position at a bank may not showcase finance industry knowledge, whereas developing financial software at a tech firm likely indicates profound industry expertise.\n3- In assessing ‘overall_industry_experience’, prioritize the candidate'\''s latest industry role if they have over one year of experience there. Also, sum up the experience from all positions to gauge their total industry involvement, highlighting both current specialization and overall breadth of experience.\n4- For recent graduates, evaluate university projects to infer industry interests and knowledge. For candidates with more than four years since graduation, prioritize professional experiences, treating academic projects as supplementary.\n5- When evaluating roles with technical keywords (e.g., data science, AI) in non-technical contexts, assess them based on the industry they primarily serve, not the skillset. For example, a \"Recruiter Data Science\" role aligns with the Recruitment/HR industry, not Technology.\n6- For each role, identify and assign up to two most relevant industries, ensuring high confidence in these selections. For the ‘overall_industry_experience’, provide assessments for up to three distinct industries, detailing the industry name and experience score for each.\n\nScoring Guideline (1-5):\nNo Exposure (1): No evidence of industry experience or relevance to the role.\nPossible Exposure (2): Minimal indications of industry involvement; the connection is speculative.\nLikely Exposure (3): Some evidence suggests industry experience, but multiple industries are plausible, or the assessment is largely based on inference.\nClear Exposure (4): Strong indicators of industry experience are present. Either the job description explicitly mentions relevant tasks or, in its absence, the role'\''s industry is clear from the context, though not detailed.\nDefinitive Exposure (5): Over one year of experience within the main industry of the job, with clear and explicit mention of industry-relevant tasks in the job description.\n\nIndustry List:\nAdvertising, Aerospace, Agriculture, Agritech, Apparel & Fashion, Artificial Intelligence (AI), Arts & Crafts, Augmented Reality (AR), Automotive, Banking, Big Data, Biotech, Blockchain, Clean Tech, Cloud Computing, Construction, Consumer Electronics, Consumer Goods, Cybersecurity, Data Analytics, Data Storage, Dating, Defense, Digital Marketing, Digital Payments, Drug Development, E-commerce, Edtech, Education, Energy, Enterprise Software, Entertainment, Environmental, Finance, Fintech, Fitness & Wellness, Food & Beverage, Gaming, Genomics, Government, Hardware, Healthcare, Healthtech, Hospitality, Human Resources & Careers, IAAS (Infrastructure as a Service), Industrial Automation, Information Technology (IT), Insurance, Insurtech, Internet of Things (IoT), Legal, Logistics & Supply Chain, Management Consulting, Manufacturing, Marine Tech, Marketing & Sales, Media, Nanotechnology, Network Security, Networking & Infrastructure, News & Publishing, Non-Profit, Oil & Gas, PAAS (Platform as a Service), Pharmaceuticals, Professional Services, Public Safety, Quantum Computing, Real Estate, Renewable Energy, Research, Retail, Robotics, SAAS (Software as a Service), Security & Safety, Semiconductor, Social Media, Software Development, Sports, Telecommunications, Transportation & Logistics, Utilities, Venture Capital, Virtual Reality (VR), VR & AR, Wearables, Cryptocurrency\n\n\nOutput Format(JSON only):\n{ \"industry_analysis\": [ { \"job_title\": \"\", \"job\": \"[Job Title] at [Company]\", \"industry\": [\"[Industry 1]\", \"[Industry 2]\"] } // Additional positions until you have all the positions mentioned ], \"overallExp\": [ { \"overal_industry\": [\"[Industry 1]\", \"[Industry 2]\"], \"score\": [\"[Score 1]\", \"[Score 2]\"] } ] }",
+                                            "text": "\"Role: As a technical recruiter, evaluate a candidate'\''s industry experience based on their ‘resume_text’ and/or ‘linkedin_text’ and past employers'\'' descriptions (‘company_description’). \nUse the ‘Industry List’ below to accurately align the candidate'\''s background with specific industry criteria. \nFor every role in the resume, including multiple positions at the same company, assess each job title independently to comprehensively capture the candidate'\''s industry experience across all roles.\n\nInstructions:\n1 - Interpreting role context with company insights: Use '\''company_description'\'' for clarity when ‘resume_text’ and/or ‘linkedin_text’ lacks detail about role descriptions and industries. This background reveals the company’s sector and offerings, providing clues to a candidate'\''s industry exposure. For instance, a \"Data Scientist\" role gains specificity if the company is known for Cybersecurity, suggesting relevant industry experience. This approach ensures accurate evaluations of a candidate'\''s exposure to specific industries, especially when their roles are broadly defined.\n2- Pay special attention to the context of each role for a nuanced assessment; for example, an IT support position at a bank may not showcase finance industry knowledge, whereas developing financial software at a tech firm likely indicates profound industry expertise.\n3- In assessing ‘overall_industry_experience’, prioritize the candidate'\''s latest industry role if they have over one year of experience there. Also, sum up the experience from all positions to gauge their total industry involvement, highlighting both current specialization and overall breadth of experience.\n4- For recent graduates, evaluate university projects to infer industry interests and knowledge. For candidates with more than four years since graduation, prioritize professional experiences, treating academic projects as supplementary.\n5- When evaluating roles with technical keywords (e.g., data science, AI) in non-technical contexts, assess them based on the industry they primarily serve, not the skillset. For example, a \"Recruiter Data Science\" role aligns with the Recruitment/HR industry, not Technology.\n6- For each role, identify and assign up to two most relevant industries, ensuring high confidence in these selections. For the ‘overall_industry_experience’, provide assessments for up to two distinct industries, detailing the industry name and experience score for each.\n\nScoring Guideline (1-5):\nNo Exposure (1): No evidence of industry experience or relevance to the role.\nPossible Exposure (2): Minimal indications of industry involvement; the connection is speculative.\nLikely Exposure (3): Some evidence suggests industry experience, but multiple industries are plausible, or the assessment is largely based on inference.\nClear Exposure (4): Strong indicators of industry experience are present. Either the job description explicitly mentions relevant tasks or, in its absence, the role'\''s industry is clear from the context, though not detailed.\nDefinitive Exposure (5): Over one year of experience within the main industry of the job, with clear and explicit mention of industry-relevant tasks in the job description.\n\nMake sure to include maximum 2 industries\n\nIndustry List:\nAdvertising, Aerospace, Agriculture, Agritech, Apparel & Fashion, Artificial Intelligence (AI), Arts & Crafts, Augmented Reality (AR), Automotive, Banking, Big Data, Biotech, Blockchain, Clean Tech, Cloud Computing, Construction, Consumer Electronics, Consumer Goods, Cybersecurity, Data Analytics, Data Storage, Dating, Defense, Digital Marketing, Digital Payments, Drug Development, E-commerce, Edtech, Education, Energy, Enterprise Software, Entertainment, Environmental, Finance, Fintech, Fitness & Wellness, Food & Beverage, Gaming, Genomics, Government, Hardware, Healthcare, Healthtech, Hospitality, Human Resources & Careers, IAAS (Infrastructure as a Service), Industrial Automation, Information Technology (IT), Insurance, Insurtech, Internet of Things (IoT), Legal, Logistics & Supply Chain, Management Consulting, Manufacturing, Marine Tech, Marketing & Sales, Media, Nanotechnology, Network Security, Networking & Infrastructure, News & Publishing, Non-Profit, Oil & Gas, PAAS (Platform as a Service), Pharmaceuticals, Professional Services, Public Safety, Quantum Computing, Real Estate, Renewable Energy, Research, Retail, Robotics, SAAS (Software as a Service), Security & Safety, Semiconductor, Social Media, Software Development, Sports, Telecommunications, Transportation & Logistics, Utilities, Venture Capital, Virtual Reality (VR), VR & AR, Wearables, Cryptocurrency\n\n\nOutput Format(JSON only):\n{ \"industry_analysis\": [ { \"job_title\": \"\", \"company_id\": \"\", \"industry\": [\"[Industry 1]\", \"[Industry 2]\"] } // Additional positions until you have all the positions mentioned ], \"overallExp\": [ { \"overal_industry\": [\"[Industry 1]\", \"[Industry 2]\"], \"score\": [\"[Score 1]\", \"[Score 2]\"] } ] }",
                                             "type": "text"
                                             }
                                         ]
@@ -444,7 +452,7 @@ def get_urls_and_headers(resume_text, companies_description, education_info):
                                     ],
                                     "temperature": 0,
                                     "response_format": { "type": "json_object" },
-                                    "max_tokens": 2000,
+                                    "max_tokens": 4000,
                                     "top_p": 1,
                                     "frequency_penalty": 0,
                                     "presence_penalty": 0
@@ -473,7 +481,7 @@ def get_urls_and_headers(resume_text, companies_description, education_info):
                                     ],
                                     "temperature": 0,
                                     "response_format": { "type": "json_object" },
-                                    "max_tokens": 2000,
+                                    "max_tokens": 4000,
                                     "top_p": 1,
                                     "frequency_penalty": 0,
                                     "presence_penalty": 0
@@ -502,7 +510,7 @@ def get_urls_and_headers(resume_text, companies_description, education_info):
                                     ],
                                     "temperature": 0,
                                     "response_format": { "type": "json_object" },
-                                    "max_tokens": 2000,
+                                    "max_tokens": 4000,
                                     "top_p": 1,
                                     "frequency_penalty": 0,
                                     "presence_penalty": 0

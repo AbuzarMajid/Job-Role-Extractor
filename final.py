@@ -57,7 +57,6 @@ async def job_role_function(categorizer: categorization):
             final_dict = {"resume_information": results} 
             restructured_data = {"resume_information": {}}
             for section in final_dict["resume_information"]:
-                print(section)
                 for key, value in section.items():
                     if key not in restructured_data["resume_information"]:
                         restructured_data["resume_information"][key] = []
@@ -114,8 +113,6 @@ async def job_role_function(categorizer: categorization):
             for url, data in urls_and_headers
         ]        
             results = await asyncio.gather(*tasks)
-            
-            # return resultsz
             final_dict = {"resume_information": results} 
             restructured_data = {"resume_information": {}}
             for section in final_dict["resume_information"]:
@@ -123,7 +120,6 @@ async def job_role_function(categorizer: categorization):
                         if key not in restructured_data["resume_information"]:
                             restructured_data["resume_information"][key] = []
                         restructured_data["resume_information"][key].extend(value)
-
             final = response_formatter(
                                 restructured_data, job_functions = categorizer.job_function_extraction, 
                                 domain_categorization=categorizer.domain_categorization, 
@@ -138,7 +134,7 @@ async def job_role_function(categorizer: categorization):
                 "role": "system",
                 "content": [
                     {
-                    "text": "Role: You are a technical recruiter. Analyze the candidate's resume_text and/or linkedin_text, considering each position they held, the job title in the context of the company they work at, the job responsibilities for each position, relevant keywords and phrases that indicate the position's experience level and responsibilities, as well as the overall years of experience. \n\nUse the following criteria to categorize candidates into one of the listed categories:\n\n1. Entry Level: Candidates with minimal experience or recent graduates.\n2. Mid Level: Individual contributors with moderate experience and some specialized skills.\n3. Senior: Individual contributors with extensive experience and advanced skills, often handling significant responsibilities.\n4. Team Lead: Candidates who guide or influence others without direct reports, requiring leadership and specialized expertise, often including both individual contributions and partial leadership responsibilities.\n5. Manager: Candidates with direct management responsibilities, typically overseeing fewer than 5 direct reports, and involved in strategic decision-making and leadership.\n6. Director: Senior management candidates with clear titles indicating they manage larger teams, typically overseeing 5 or more people, with significant strategic and operational responsibilities. \n\nFor each resume or profile:- \nAssess the candidate's experience and responsibilities.- Match the candidate's profile to the appropriate category based on the descriptions provided. JSON Output: \"seniority_level\": \"[level: Entry Level, Mid-Level, Senior, Team Lead, Manager, Director\"],\n\nOutput Format: JSON\n{\n\"seniority_level\": \"\"\n}",
+                    "text": "Role: You are a technical recruiter. Analyze the candidate's resume_text and/or linkedin_text, considering each position they held, the job title in the context of the company they work at, the job responsibilities for each position, relevant keywords and phrases that indicate the position's experience level and responsibilities, as well as the overall years of experience. \n\nUse the following criteria to categorize candidates into one of the listed categories:\n\n1. Entry Level: Candidates with minimal experience or recent graduates.\n2. Mid-Level: Individual contributors with moderate experience and some specialized skills.\n3. Senior: Individual contributors with extensive experience and advanced skills, often handling significant responsibilities.\n4. Team Lead: Candidates who guide or influence others without direct reports, requiring leadership and specialized expertise, often including both individual contributions and partial leadership responsibilities.\n5. Manager: Candidates with direct management responsibilities, typically overseeing fewer than 5 direct reports, and involved in strategic decision-making and leadership.\n6. Director: Senior management candidates with clear titles indicating they manage larger teams, typically overseeing 5 or more people, with significant strategic and operational responsibilities. \n\nFor each resume or profile:- \nAssess the candidate's experience and responsibilities.- Match the candidate's profile to the appropriate category based on the descriptions provided. JSON Output: \"seniority_level\": \"[level: Entry Level, Mid-Level, Senior, Team Lead, Manager, Director\"],\n\nOutput Format: JSON\n{\n\"seniority_level\": \"\"\n}",
                     "type": "text"
                     },
                     {
@@ -149,7 +145,7 @@ async def job_role_function(categorizer: categorization):
                 }
             ],
             temperature=0,
-            max_tokens=256,
+            max_tokens=100,
             response_format={"type": "json_object"},
             top_p=1,
             frequency_penalty=0,
@@ -158,7 +154,7 @@ async def job_role_function(categorizer: categorization):
             talent_info = map_talent_info(final_dict=final, linkenin_text=linkedin_json)
             talent_info["data"]["seniority_level"] = json.loads(response.choices[0].message.content)["seniority_level"]
             # linkedin_text = json.loads(categorizer.linkedin_text)
-            return map_talent_info(final_dict=final, linkenin_text=linkedin_json)
+            return talent_info
         
             # return results
         except Exception as e:  
